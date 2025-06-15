@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:6
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  central_server:
+    build:
+      context: .
+    container_name: central_server
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 5090 centeral_server.asgi:application"
+    volumes:
+      - .:/app
+    ports:
+      - "5090:5090"
+    depends_on:
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=centeral_server.settings
