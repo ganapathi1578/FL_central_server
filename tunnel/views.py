@@ -44,7 +44,7 @@ def register_or_get_id(request):
 
 async def proxy_to_home(request, house_id, path):
     # 1) Look up the tunnel
-    tunnel = await HouseTunnel.objects.filter(house_id=house_id, connected=True).afirst()
+    tunnel = await HouseTunnel.objects.filter(house_id=house_id, connected=True).first()
     if not tunnel:
         return JsonResponse({'error': 'home offline'}, status=503)
 
