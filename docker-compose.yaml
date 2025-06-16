@@ -22,9 +22,9 @@ services:
       - redis
     environment:
       - DJANGO_SETTINGS_MODULE=centeral_server.settings
-  django:
-    build: .
-    environment:
-      - TZ=Asia/Kolkata
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
+  # django:
+  #   build: .
+  #   environment:
+  #     - TZ=Asia/Kolkata
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro

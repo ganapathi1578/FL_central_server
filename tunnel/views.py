@@ -53,6 +53,7 @@ def register_or_get_id(request):
 
 
 async def proxy_to_home(request, house_id, path):
+    print("entered view proxy")
     # 1) Find the connected tunnel record
     tunnel = await sync_to_async(
         HouseTunnel.objects.filter(house_id=house_id, connected=True).first

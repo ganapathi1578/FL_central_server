@@ -53,7 +53,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'centeral_server.middleware.ForceAsiaKolkataTimezoneMiddleware',
+    #'centeral_server.middleware.ForceAsiaKolkataTimezoneMiddleware',
 ]
 
 ROOT_URLCONF = "centeral_server.urls"
