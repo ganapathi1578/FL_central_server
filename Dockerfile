@@ -3,8 +3,8 @@
 FROM python:3.11-slim
 
 # Environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
@@ -14,6 +14,16 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
+
+# Install tzdata
+RUN apt-get update && apt-get install -y tzdata
+
+# Set timezone to Asia/Kolkata
+ENV TZ=Asia/Kolkata
+
+# Optional: avoid tzdata configuration prompt
+ENV DEBIAN_FRONTEND=noninteractive
+
 
 # Install Python requirements
 COPY requirements.txt .

@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["10.23.8.207",'*']
 
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True
 
 # Application definition
 
@@ -51,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'centeral_server.middleware.ForceAsiaKolkataTimezoneMiddleware',
 ]
 
 ROOT_URLCONF = "centeral_server.urls"
