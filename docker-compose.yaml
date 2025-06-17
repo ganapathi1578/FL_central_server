@@ -1,37 +1,31 @@
 
-services:
-  redis:
-    image: redis:6
-    container_name: redis
-    ports:
-      - "6379:6379"
+  services:
+    redis:
+      image: redis:6
+      container_name: redis
+      ports:
+        - "6379:6379"
 
-  central_server:
-    build:
-      context: .
-    container_name: central_server
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             daphne -b 0.0.0.0 -p 8000 centeral_server.asgi:application"
-    volumes:
-      - .:/app
-    expose:
-      - "8000"  # expose only to nginx
-    depends_on:
-      - redis
-    environment:
-      - DJANGO_SETTINGS_MODULE=centeral_server.settings
-      - TZ=Asia/Kolkata
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "5090:5090"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./static:/app/static
-      - ./media:/app/media
-    depends_on:
-      - central_server
+    central_server:
+      build:
+        context: .
+      container_name: central_server
+      command: >
+        sh -c "python manage.py migrate &&
+              python manage.py collectstatic --noinput &&
+              daphne -b 0.0.0.0 -p 5090 centeral_server.asgi:application"
+      volumes:
+        - .:/app
+      ports:
+        - "5090:5090"
+      depends_on:
+        - redis
+      environment:
+        - DJANGO_SETTINGS_MODULE=centeral_server.settings
+    django:
+      build: .
+      environment:
+        - TZ=Asia/Kolkata
+      volumes:
+        - /etc/localtime:/etc/localtime:ro
+    
