@@ -29,9 +29,9 @@ services:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "5090:5090"  # exposed for IITTP redirection
+      - "5090:5090"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./static:/app/static
       - ./media:/app/media
     depends_on:
