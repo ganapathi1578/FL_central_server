@@ -156,7 +156,7 @@ async def proxy_to_home(request, house_id, path):
     if not tunnel:
         return JsonResponse({'error': 'home offline'}, status=503)
 
-    # 2) Prepare headers for the proxied request
+    # 2) Prepare headers
     headers = dict(request.headers)
     if request.COOKIES:
         headers['Cookie'] = "; ".join(f"{k}={v}" for k, v in request.COOKIES.items())
@@ -175,12 +175,11 @@ async def proxy_to_home(request, house_id, path):
 
     # 4) Send to the home server and await response
     response = await send_and_wait(house_id, frame)
-    status       = response.get('status', 200)
+    status = response.get('status', 200)
     resp_headers = response.get('headers', {})
-    is_base64    = response.get('is_base64', False)
-    raw_body     = response.get('body', b'')
+    raw_body = response.get('body', b'')
 
-    # 5) Handle HTTP redirects (3xx)
+    # 5) Handle redirects
     if 300 <= status < 400 and 'Location' in resp_headers:
         loc = resp_headers['Location']
         if loc.startswith('/'):
@@ -190,29 +189,25 @@ async def proxy_to_home(request, house_id, path):
             redirect['Set-Cookie'] = resp_headers['Set-Cookie']
         return redirect
 
-    # 6) Decode the body
+    # 6) Forward everything else as a streamed response
+    is_base64 = response.get("is_base64", False)
+    raw_body = response.get("body", b"")
+
     if is_base64:
         body_bytes = base64.b64decode(raw_body)
     else:
         body_bytes = raw_body.encode('utf-8') if isinstance(raw_body, str) else raw_body
+    resp = StreamingHttpResponse(body_bytes, status=status)
 
-    # 7) Return appropriate response type
-    content_type = resp_headers.get('Content-Type', '')
-
-    # JSON or plain text: buffer fully
-    if content_type.startswith('application/json') or content_type.startswith('text/'):
-        return HttpResponse(
-            body_bytes,
-            status=status,
-            content_type=content_type or 'application/json'
-        )
-
-    # Binary/media content: stream
-    resp = StreamingHttpResponse(body_bytes, status=status, content_type=content_type)
     for k, v in resp_headers.items():
-        if k.lower() == 'set-cookie':
+        if k.lower() not in ('set-cookie', 'content-length'):
             resp[k] = v
+
+    if 'Set-Cookie' in resp_headers:
+        resp['Set-Cookie'] = resp_headers['Set-Cookie']
+
     return resp
+
 
 
 @api_view(["POST"])
