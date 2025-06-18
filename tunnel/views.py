@@ -16,6 +16,7 @@ from datetime import timedelta
 from .models import RegistrationToken
 import secrets
 import base64
+import traceback
 
 
 @csrf_exempt
@@ -146,73 +147,82 @@ async def proxy_to_home(request, house_id, path):
 
     return resp
 """
+@csrf_exempt
 async def proxy_to_home(request, house_id, path):
-    print("entered view proxy")
+    try:
+        print(f"entered view proxy → house_id={house_id!r}, path={path!r}")
 
-    # 1) Find the connected tunnel record
-    tunnel = await sync_to_async(
-        HouseTunnel.objects.filter(house_id=house_id, connected=True).first
-    )()
-    if not tunnel:
-        return JsonResponse({'error': 'home offline'}, status=503)
+        # 1) Find the connected tunnel record
+        tunnel = await sync_to_async(
+            HouseTunnel.objects.filter(house_id=house_id, connected=True).first
+        )()
+        if not tunnel:
+            return JsonResponse({'error': 'home offline'}, status=503)
 
-    # 2) Prepare headers for the proxied request
-    headers = dict(request.headers)
-    if request.COOKIES:
-        headers['Cookie'] = "; ".join(f"{k}={v}" for k, v in request.COOKIES.items())
-    if 'Range' in request.headers:
-        headers['Range'] = request.headers['Range']
+        # 2) Prepare headers
+        headers = dict(request.headers)
+        if request.COOKIES:
+            headers['Cookie'] = "; ".join(f"{k}={v}" for k, v in request.COOKIES.items())
+        if 'Range' in request.headers:
+            headers['Range'] = request.headers['Range']
 
-    # 3) Build the proxy request frame
-    frame = {
-        'action':  'proxy_request',
-        'id':      str(uuid.uuid4()),
-        'method':  request.method,
-        'path':    path,
-        'headers': headers,
-        'body':    request.body.decode('utf-8', 'ignore'),
-    }
+        # 3) Build frame
+        frame = {
+            'action':  'proxy_request',
+            'id':      str(uuid.uuid4()),
+            'method':  request.method,
+            'path':    path,
+            'headers': headers,
+            'body':    request.body.decode('utf-8', 'ignore'),
+        }
+        print(" → Sending frame:", frame)
 
-    # 4) Send to the home server and await response
-    response = await send_and_wait(house_id, frame)
-    status       = response.get('status', 200)
-    resp_headers = response.get('headers', {})
-    is_base64    = response.get('is_base64', False)
-    raw_body     = response.get('body', b'')
+        # 4) Send and wait
+        response = await send_and_wait(house_id, frame)
+        print(" ← Got response:", {k: response.get(k) for k in ('status','headers','is_base64')})
 
-    # 5) Handle HTTP redirects (3xx)
-    if 300 <= status < 400 and 'Location' in resp_headers:
-        loc = resp_headers['Location']
-        if loc.startswith('/'):
-            loc = f"/homes/{house_id}{loc}"
-        redirect = HttpResponseRedirect(loc)
-        if 'Set-Cookie' in resp_headers:
-            redirect['Set-Cookie'] = resp_headers['Set-Cookie']
-        return redirect
+        # 5) Handle redirects
+        status       = response.get('status', 200)
+        resp_headers = response.get('headers', {})
+        is_base64    = response.get('is_base64', False)
+        raw_body     = response.get('body', b'')
 
-    # 6) Decode the body
-    if is_base64:
-        body_bytes = base64.b64decode(raw_body)
-    else:
-        body_bytes = raw_body.encode('utf-8') if isinstance(raw_body, str) else raw_body
+        if 300 <= status < 400 and 'Location' in resp_headers:
+            loc = resp_headers['Location']
+            if loc.startswith('/'):
+                loc = f"/homes/{house_id}{loc}"
+            redirect = HttpResponseRedirect(loc)
+            if 'Set-Cookie' in resp_headers:
+                redirect['Set-Cookie'] = resp_headers['Set-Cookie']
+            return redirect
 
-    # 7) Return appropriate response type
-    content_type = resp_headers.get('Content-Type', '')
+        # 6) Decode body
+        if is_base64:
+            body_bytes = base64.b64decode(raw_body)
+        else:
+            body_bytes = raw_body.encode('utf-8') if isinstance(raw_body, str) else raw_body
 
-    # JSON or plain text: buffer fully
-    if content_type.startswith('application/json') or content_type.startswith('text/'):
-        return HttpResponse(
-            body_bytes,
-            status=status,
-            content_type=content_type or 'application/json'
-        )
+        # 7) Return proper response
+        content_type = resp_headers.get('Content-Type', '')
 
-    # Binary/media content: stream
-    resp = StreamingHttpResponse(body_bytes, status=status, content_type=content_type)
-    for k, v in resp_headers.items():
-        if k.lower() == 'set-cookie':
-            resp[k] = v
-    return resp
+        if content_type.startswith('application/json') or content_type.startswith('text/'):
+            return HttpResponse(body_bytes, status=status, content_type=content_type or 'application/json')
+
+        resp = StreamingHttpResponse(body_bytes, status=status, content_type=content_type)
+        for k, v in resp_headers.items():
+            if k.lower() == 'set-cookie':
+                resp[k] = v
+        return resp
+
+    except Exception as e:
+        # Log full traceback to console
+        print("‼️ proxy_to_home exception:", e)
+        traceback.print_exc()
+        # Return JSON error so client sees something useful
+        return JsonResponse({
+            'error': 'proxy error',
+            'detail': str(e),
+        }, status=502)
 
 
 
