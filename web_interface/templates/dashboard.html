@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #23272b; color: #fff; font-family: 'Roboto', sans-serif; }
+        .dashboard-main { display: flex; gap: 32px; max-width: 1100px; margin: 60px auto; }
+        .dashboard-section { background: #181a1b; padding: 32px 24px; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.18); flex: 1; }
+        .dashboard-section h2 { color: #4fc3f7; margin-bottom: 24px; text-align: left; }
+        .dashboard-section label { font-weight: 500; }
+        .dashboard-section input, .dashboard-section select { width: 100%; padding: 10px; margin: 8px 0 16px 0; border-radius: 4px; border: 1px solid #333; background: #23272b; color: #fff; }
+        .dashboard-section button { width: 100%; padding: 12px 0; background: #4fc3f7; color: #181a1b; border: none; border-radius: 4px; font-size: 1rem; font-weight: 500; transition: background 0.2s; }
+        .dashboard-section button:hover { background: #0288d1; color: #fff; }
+        .token-list, .tunnel-list { margin-top: 32px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #333; text-align: left; }
+        th { background: #23272b; color: #4fc3f7; }
+        tr:last-child td { border-bottom: none; }
+        .expired { color: #d9534f; font-weight: 500; }
+        .connected { color: #4caf50; font-size: 1.2em; }
+        .disconnected { color: #d9534f; font-size: 1.2em; }
+        .info-label { color: #bbb; font-weight: 500; }
+        .info-value { font-family: monospace; font-size: 1.1rem; }
+        .side-nav { background: #181a1b; padding: 24px 0; border-radius: 10px; min-width: 220px; margin-right: 32px; }
+        .side-nav ul { list-style: none; padding: 0; margin: 0; }
+        .side-nav li { margin-bottom: 18px; }
+        .side-nav a { color: #4fc3f7; text-decoration: none; font-size: 1.1rem; display: block; padding: 8px 24px; border-radius: 6px; transition: background 0.2s; }
+        .side-nav a.active, .side-nav a:hover { background: #23272b; color: #fff; }
+    </style>
+</head>
+<body>
+    <div style="display: flex; max-width: 1400px; margin: 60px auto;">
+        {% comment %} <nav class="side-nav">
+            <ul>
+                <li><a href="" class="active">Registration tokens</a></li>
+                <li><a href="">House tunnels</a></li>
+            </ul>
+        </nav> {% endcomment %}
+        <div class="dashboard-main" style="flex:1;">
+            <div class="dashboard-section" id="tokens">
+                <h2>Registration Tokens</h2>
+                <form method="post" action="/dashboard/">
+                    {% csrf_token %}
+                    <input type="hidden" name="create_token" value="1">
+                    <label for="ttl">Token TTL (minutes):</label>
+                    <input type="number" id="ttl" name="ttl" min="1" max="1440" value="10" required>
+                    <button type="submit">Generate Registration Token</button>
+                </form>
+                <div class="token-list">
+                    <h3 style="margin-top:32px;">Your Tokens</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Expires At</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for token in tokens reversed%}
+                            <tr>
+                                <td style="font-family:monospace;">{{ token.token }}</td>
+                                <td>{{ token.expires_at }}</td>
+                                <td>{% if token.is_expired %}<span class="expired">Expired</span>{% else %}Active{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" style="text-align:center;">No tokens found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="dashboard-section" id="tunnels">
+                <h2>House Tunnels</h2>
+                <div class="tunnel-list">
+                    <h3 style="margin-top:32px;">Your House Tunnels</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>House ID</th>
+                                <th>Secret Key</th>
+                                <th>Connected</th>
+                                <th>Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tunnel in housetunnels %}
+                            <tr>
+                                <td style="font-family:monospace;">{{ tunnel.house_id }}</td>
+                                <td style="font-family:monospace;">{{ tunnel.secret_key }}</td>
+                                <td>{% if tunnel.connected %}<span class="connected">&#10004;</span>{% else %}<span class="disconnected">&#10008;</span>{% endif %}</td>
+                                <td>{{ tunnel.last_seen }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" style="text-align:center;">No house tunnels found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

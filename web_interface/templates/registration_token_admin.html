@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Token Admin</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #f6f8fa; font-family: 'Roboto', sans-serif; }
+        .token-admin-container { max-width: 600px; margin: 60px auto; background: #fff; padding: 32px 32px 24px 32px; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+        .token-admin-container h2 { color: #007bff; margin-bottom: 24px; text-align: center; }
+        .token-admin-container label { font-weight: 500; }
+        .token-admin-container input, .token-admin-container select { width: 100%; padding: 10px; margin: 8px 0 16px 0; border-radius: 4px; border: 1px solid #ccc; }
+        .token-admin-container button { width: 100%; padding: 12px 0; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 1rem; font-weight: 500; transition: background 0.2s; }
+        .token-admin-container button:hover { background: #0056b3; }
+        .token-list { margin-top: 32px; }
+        .token-list table { width: 100%; border-collapse: collapse; }
+        .token-list th, .token-list td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .token-list th { background: #f0f4f8; }
+        .token-list tr:last-child td { border-bottom: none; }
+        .token-list .expired { color: #d9534f; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="token-admin-container">
+        <h2>Registration Token Admin</h2>
+        <form method="post" action="/admin/tunnel/registrationtoken/">
+            {% csrf_token %}
+            <label for="ttl">Token TTL (minutes):</label>
+            <input type="number" id="ttl" name="ttl" min="1" max="1440" value="10" required>
+            <button type="submit">Generate Registration Token</button>
+        </form>
+        <div class="token-list">
+            <h3 style="margin-top:32px;">Existing Tokens</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Expires At</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for token in tokens %}
+                    <tr>
+                        <td style="font-family:monospace;">{{ token.token }}</td>
+                        <td>{{ token.expires_at }}</td>
+                        <td>{% if token.is_expired %}<span class="expired">Expired</span>{% else %}Active{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" style="text-align:center;">No tokens found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

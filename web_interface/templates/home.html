@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Container</title>
+</head>
+<body>
+    <div style="text-align:right; margin: 20px 40px 0 0;">
+        <a href="/login/" style="font-size: 1.1rem; color: #007bff; text-decoration: underline;">Login</a>
+    </div>
+    <section class="download-section" style="text-align:center; margin: 40px 0;">
+        <h2>Download Our Home survivallance   Container</h2>
+        <p>Get started with our pre-built Docker container for easy deployment.</p>
+        <a href="{% static 'book.pdf' %}" class="download-btn" download>
+            <button style="padding: 12px 32px; font-size: 1.1rem; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
+                Download Container
+            </button>
+        </a>
+    </section>
+</body>
+</html>

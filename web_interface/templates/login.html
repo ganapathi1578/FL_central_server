@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | NextGen Health Management System</title>
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #f6f8fa; font-family: 'Roboto', sans-serif; }
+        .login-container { max-width: 400px; margin: 80px auto; background: #fff; padding: 32px 24px; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+        .login-container h2 { color: #007bff; margin-bottom: 24px; }
+        .login-container label { font-weight: 500; }
+        .login-container input { width: 100%; padding: 10px; margin: 8px 0 16px 0; border-radius: 4px; border: 1px solid #ccc; }
+        .login-container button { width: 100%; padding: 12px 0; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 1rem; font-weight: 500; transition: background 0.2s; }
+        .login-container button:hover { background: #0056b3; }
+        .login-container p { text-align: center; margin-top: 18px; }
+        .login-container a { color: #007bff; text-decoration: none; }
+        .login-container a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        {% if messages %}
+        <ul style="max-width:400px;margin:20px auto 0 auto;padding:0;list-style:none;">
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <li style="color:#d9534f; text-align:center; margin-bottom:8px;">{{ message }}</li>
+            {% else %}
+            <li style="color:#28a745; text-align:center; margin-bottom:8px;">{{ message }}</li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <form method="post" action="/login/">
+            {% csrf_token %}
+            <label for="userid">User ID:</label><br>
+            <input type="text" id="userid" name="userid" required>
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="/register/">Register</a></p>
+    </div>
+</body>
+</html>

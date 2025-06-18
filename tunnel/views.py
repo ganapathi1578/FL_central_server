@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
-from .models import RegistrationToken
+from .models import RegistrationToken, User
 import secrets
 import base64
 import traceback
@@ -33,7 +33,7 @@ def register_or_get_id(request):
 
     rt = RegistrationToken.objects.filter(
         token=token, expires_at__gt=timezone.now()
-    ).first()
+    ).select_related('user').first()
 
     if not rt.is_valid:
         return JsonResponse({"error":"invalid or expired registration token"}, status=403)
@@ -43,10 +43,12 @@ def register_or_get_id(request):
         return JsonResponse({"error": "invalid or expired registration token"}, status=403)
     
     # Marking as used
-    rt.is_used = True
+    rt.is_used = True   
     rt.save()
+    if rt:
+        user = rt.user
     key = hashlib.sha256(token.encode()).hexdigest()
-    tunnel, created = HouseTunnel.objects.get_or_create(secret_key=key)
+    tunnel, created = HouseTunnel.objects.get_or_create(secret_key=key, user=user)
 
     return JsonResponse({
         "house_id":   tunnel.house_id,
@@ -227,11 +229,19 @@ async def proxy_to_home(request, house_id, path):
 
 
 
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
+#@api_view(["POST"])
+#@permission_classes([IsAdminUser])
 def create_registration_token(request):
-    ttl = int(request.data.get("ttl", 10))
-    token = secrets.token_urlsafe(32)
-    expires = timezone.now() + timedelta(minutes=ttl)
-    RegistrationToken.objects.create(token=token, expires_at=expires)
-    return Response({"token": token, "expires_at": expires})
+    if request.method == "POST":
+        user_id = request.session.get('user_id')
+        if user_id:
+            user = User.objects.get(id=user_id)
+            ttl = int(request.data.get("ttl", 10))
+            token = secrets.token_urlsafe(32)
+            expires = timezone.now() + timedelta(minutes=ttl)
+            RegistrationToken.objects.create(token=token, expires_at=expires, user=user)
+            return Response({"token": token, "expires_at": expires})
+        else:
+            return HttpResponseRedirect('web_interface:login')
+    else:
+        return JsonResponse({'error': "Method Not Allowed"})

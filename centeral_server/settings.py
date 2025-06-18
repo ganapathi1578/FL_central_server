@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'channels',
     'tunnel',
+    'web_interface',
 ]
 
 MIDDLEWARE = [
