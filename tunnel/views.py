@@ -156,14 +156,14 @@ async def proxy_to_home(request, house_id, path):
     if not tunnel:
         return JsonResponse({'error': 'home offline'}, status=503)
 
-    # 2) Prepare headers
+    # 2) Prepare headers for the proxied request
     headers = dict(request.headers)
     if request.COOKIES:
         headers['Cookie'] = "; ".join(f"{k}={v}" for k, v in request.COOKIES.items())
-    if 'Range' in headers:
-        headers['Range'] = headers['Range']
+    if 'Range' in request.headers:
+        headers['Range'] = request.headers['Range']
 
-    # 3) Build the proxy frame
+    # 3) Build the proxy request frame
     frame = {
         'action':  'proxy_request',
         'id':      str(uuid.uuid4()),
@@ -173,15 +173,14 @@ async def proxy_to_home(request, house_id, path):
         'body':    request.body.decode('utf-8', 'ignore'),
     }
 
-    # 4) Send and wait for response from tunnel
+    # 4) Send to the home server and await response
     response = await send_and_wait(house_id, frame)
-
     status       = response.get('status', 200)
     resp_headers = response.get('headers', {})
-    raw_body     = response.get('body', b'')
     is_base64    = response.get('is_base64', False)
+    raw_body     = response.get('body', b'')
 
-    # 5) Redirect support
+    # 5) Handle HTTP redirects (3xx)
     if 300 <= status < 400 and 'Location' in resp_headers:
         loc = resp_headers['Location']
         if loc.startswith('/'):
@@ -191,32 +190,28 @@ async def proxy_to_home(request, house_id, path):
             redirect['Set-Cookie'] = resp_headers['Set-Cookie']
         return redirect
 
-    # 6) Decode body if base64
+    # 6) Decode the body
     if is_base64:
         body_bytes = base64.b64decode(raw_body)
     else:
         body_bytes = raw_body.encode('utf-8') if isinstance(raw_body, str) else raw_body
 
-    # 7) Decide response type
+    # 7) Return appropriate response type
     content_type = resp_headers.get('Content-Type', '')
 
-    # For JSON or text (e.g., HTML, JavaScript), use full buffer
+    # JSON or plain text: buffer fully
     if content_type.startswith('application/json') or content_type.startswith('text/'):
-        response_obj = HttpResponse(body_bytes, status=status, content_type=content_type or 'application/json')
-        for k, v in resp_headers.items():
-            if k.lower() not in ('set-cookie', 'content-length'):
-                response_obj[k] = v
-        if 'Set-Cookie' in resp_headers:
-            response_obj['Set-Cookie'] = resp_headers['Set-Cookie']
-        return response_obj
+        return HttpResponse(
+            body_bytes,
+            status=status,
+            content_type=content_type or 'application/json'
+        )
 
-    # For all other types (media, binary), stream
+    # Binary/media content: stream
     resp = StreamingHttpResponse(body_bytes, status=status, content_type=content_type)
     for k, v in resp_headers.items():
-        if k.lower() not in ('set-cookie', 'content-length'):
+        if k.lower() == 'set-cookie':
             resp[k] = v
-    if 'Set-Cookie' in resp_headers:
-        resp['Set-Cookie'] = resp_headers['Set-Cookie']
     return resp
 
 

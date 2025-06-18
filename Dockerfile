@@ -15,14 +15,14 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-# # Install tzdata
-# RUN apt-get update && apt-get install -y tzdata
+# Install tzdata
+RUN apt-get update && apt-get install -y tzdata
 
-# # Set timezone to Asia/Kolkata
-# ENV TZ=Asia/Kolkata
+# Set timezone to Asia/Kolkata
+ENV TZ=Asia/Kolkata
 
-# # Optional: avoid tzdata configuration prompt
-# ENV DEBIAN_FRONTEND=noninteractive
+# Optional: avoid tzdata configuration prompt
+ENV DEBIAN_FRONTEND=noninteractive
 
 
 # Install Python requirements
