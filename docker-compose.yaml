@@ -17,7 +17,7 @@ services:
     volumes:
       - .:/app
     expose:
-      - "5090"
+      - "5090"  # Exposed to nginx, not the host directly
     depends_on:
       - redis
     environment:
@@ -28,9 +28,9 @@ services:
     image: nginx:stable-alpine
     container_name: central_nginx
     ports:
-      - "80:80"
+      - "5090:80"  # Expose NGINX externally on port 5090
     depends_on:
       - central_server
     volumes:
-      # Assumes nginx.conf sits next to this docker-compose.yaml
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/static:ro

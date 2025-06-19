@@ -1,39 +1,37 @@
-# Dockerfile
-
+# Use slim Python image for minimal footprint
 FROM python:3.11-slim
 
-# Environment variables
+# Prevent Python from writing .pyc files & force flush output
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Set working directory inside container
 WORKDIR /app
 
-# Install dependencies
+# Install required system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     netcat-openbsd \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install tzdata
-RUN apt-get update && apt-get install -y tzdata
+    tzdata \
+ && rm -rf /var/lib/apt/lists/*
 
 # Set timezone to Asia/Kolkata
 ENV TZ=Asia/Kolkata
-
-# Optional: avoid tzdata configuration prompt
 ENV DEBIAN_FRONTEND=noninteractive
 
-
-# Install Python requirements
+# Install Python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy entire project
+# Copy all app files
 COPY . .
 
-# Expose the Daphne port
+# Collecting static files
+RUN python manage.py collectstatic --noinput
+
+# Expose Daphne's port (not necessary, since only Nginx hits it internally)
 EXPOSE 5090
 
-# Start Daphne server directly
+# Start Daphne (also defined in docker-compose command, so this is fallback)
 CMD ["daphne", "-b", "0.0.0.0", "-p", "5090", "centeral_server.asgi:application"]
