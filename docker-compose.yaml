@@ -1,31 +1,36 @@
 
-  services:
-    redis:
-      image: redis:6
-      container_name: redis
-      ports:
-        - "6379:6379"
+services:
+  redis:
+    image: redis:6
+    container_name: redis
+    ports:
+      - "6379:6379"
 
-    central_server:
-      build:
-        context: .
-      container_name: central_server
-      command: >
-        sh -c "python manage.py migrate &&
-              python manage.py collectstatic --noinput &&
-              daphne -b 0.0.0.0 -p 5090 centeral_server.asgi:application"
-      volumes:
-        - .:/app
-      ports:
-        - "5090:5090"
-      depends_on:
-        - redis
-      environment:
-        - DJANGO_SETTINGS_MODULE=centeral_server.settings
-    django:
-      build: .
-      environment:
-        - TZ=Asia/Kolkata
-      volumes:
-        - /etc/localtime:/etc/localtime:ro
-    
+  central_server:
+    build:
+      context: .
+    container_name: central_server
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 5090 centeral_server.asgi:application"
+    volumes:
+      - .:/app
+    expose:
+      - "5090"
+    depends_on:
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=centeral_server.settings
+      - TZ=Asia/Kolkata
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: central_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - central_server
+    volumes:
+      # Assumes nginx.conf sits next to this docker-compose.yaml
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro

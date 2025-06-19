@@ -51,3 +51,6 @@ class TunnelConsumer(AsyncWebsocketConsumer):
             if future:
                 future.set_result(data)
             return
+    async def forward_http(self, event):
+        print("📤 Forwarding event to house:", event)
+        await self.send(text_data=json.dumps(event))

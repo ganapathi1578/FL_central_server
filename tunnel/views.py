@@ -154,7 +154,7 @@ async def proxy_to_home(request, house_id, path):
     try:
         print(f"entered view proxy → house_id={house_id!r}, path={path!r}")
 
-        # 1) Find the connected tunnel record
+        # 1) Find connected tunnel
         tunnel = await sync_to_async(
             HouseTunnel.objects.filter(house_id=house_id, connected=True).first
         )()
@@ -179,7 +179,7 @@ async def proxy_to_home(request, house_id, path):
         }
         print(" → Sending frame:", frame)
 
-        # 4) Send and wait
+        # 4) Send & wait
         response = await send_and_wait(house_id, frame)
         print(" ← Got response:", {k: response.get(k) for k in ('status','headers','is_base64')})
 
@@ -204,23 +204,27 @@ async def proxy_to_home(request, house_id, path):
         else:
             body_bytes = raw_body.encode('utf-8') if isinstance(raw_body, str) else raw_body
 
-        # 7) Return proper response
-        content_type = resp_headers.get('Content-Type', '')
+        # 7) Construct response
+        content_type = resp_headers.get('Content-Type', 'application/octet-stream')
 
-        if content_type.startswith('application/json') or content_type.startswith('text/'):
-            return HttpResponse(body_bytes, status=status, content_type=content_type or 'application/json')
+        # Use StreamingHttpResponse (not full buffer)
+        resp = StreamingHttpResponse((body_bytes,), status=status, content_type=content_type)
 
-        resp = StreamingHttpResponse(body_bytes, status=status, content_type=content_type)
+        # Set important headers
         for k, v in resp_headers.items():
-            if k.lower() == 'set-cookie':
+            if k.lower() not in {'content-encoding', 'transfer-encoding', 'connection'}:
                 resp[k] = v
+
+        # Ensure HLS CORS support
+        resp["Access-Control-Allow-Origin"] = "*"
+        resp["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        resp["Access-Control-Allow-Headers"] = "*"
+
         return resp
 
     except Exception as e:
-        # Log full traceback to console
         print("‼️ proxy_to_home exception:", e)
         traceback.print_exc()
-        # Return JSON error so client sees something useful
         return JsonResponse({
             'error': 'proxy error',
             'detail': str(e),
