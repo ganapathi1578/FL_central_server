@@ -34,7 +34,7 @@
             {% endfor %}
         </ul>
         {% endif %}
-        <form method="post" action="/register/">
+        <form method="post" action="{% url 'register'%}">
             {% csrf_token %}
             <label for="email">Email:</label><br>
             <input type="email" id="email" name="email" required>
@@ -46,7 +46,7 @@
             <input type="password" id="confirm_password" name="confirm_password" required>
             <button type="submit">Register</button>
         </form>
-        <p>Already have an account? <a href="/login/">Login</a></p>
+        <p>Already have an account? <a href="{% url 'login'%}">Login</a></p>
     </div>
 </body>
 </html>

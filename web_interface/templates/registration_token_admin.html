@@ -26,7 +26,7 @@
 <body>
     <div class="token-admin-container">
         <h2>Registration Token Admin</h2>
-        <form method="post" action="/admin/tunnel/registrationtoken/">
+        <form method="post" action="{% url 'create_registration_token' %}">
             {% csrf_token %}
             <label for="ttl">Token TTL (minutes):</label>
             <input type="number" id="ttl" name="ttl" min="1" max="1440" value="10" required>
@@ -40,6 +40,7 @@
                         <th>Token</th>
                         <th>Expires At</th>
                         <th>Status</th>
+                        <th>Is Used</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,7 +48,8 @@
                     <tr>
                         <td style="font-family:monospace;">{{ token.token }}</td>
                         <td>{{ token.expires_at }}</td>
-                        <td>{% if token.is_expired %}<span class="expired">Expired</span>{% else %}Active{% endif %}</td>
+                        <td>{% if  token.is_valid %}<span class="expired">Expired</span>{% else %}Active{% endif %}</td>
+                        <td>{% if token.is_used %} <span class="expired">Used</span>{% else %}Active{% endif %}</td >
                     </tr>
                     {% empty %}
                     <tr><td colspan="3" style="text-align:center;">No tokens found.</td></tr>
