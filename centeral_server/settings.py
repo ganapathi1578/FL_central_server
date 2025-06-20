@@ -26,6 +26,14 @@ SECRET_KEY = "django-insecure-3ib8!1sm)0_@cpt7bmyooiz5*wnburhrg_3*&t6(yky077oyl2
 DEBUG = True
 
 ALLOWED_HOSTS = ["10.23.8.207",'*']
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5090",
+    "http://127.0.0.1:5090",
+    "http://your-domain.com",
+    "https://your-domain.com",
+    "http://services.iittp.ac.in",
+    "https://services.iittp.ac.in",
+]
 
 TIME_ZONE = 'Asia/Kolkata'
 USE_TZ = True
@@ -42,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'channels',
     'tunnel',
+    'redis',
     'web_interface',
 ]
 
@@ -121,9 +130,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+#TIME_ZONE = "UTC"
 
-USE_I18N = True
+#USE_I18N = True
 
 USE_TZ = True
 

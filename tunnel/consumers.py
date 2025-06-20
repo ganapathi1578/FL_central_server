@@ -8,6 +8,7 @@ from channels.db import database_sync_to_async
 
 class TunnelConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        print("✅ WebSocket connected!") 
         await self.accept()
         self.house_id = None  # To keep track of which house_id is connected
 

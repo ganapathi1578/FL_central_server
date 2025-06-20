@@ -15,3 +15,4 @@ urlpatterns = [
     #path('homes/<str:house_id>/<path:path>', proxy_to_home),
 
 ]
+    
